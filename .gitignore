@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+README.local.md
 .secrets/
 
 *.pem
