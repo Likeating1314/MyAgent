@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:auth;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+app:
+  auth:
+    issuer: http://issuer.test
+    audience: local-agent-test
+    access-ttl: PT10M
+    refresh-ttl: P30D
+    key-id: test-key
+    private-key-pem: ""
+    public-key-pem: ""
+    allow-ephemeral-key: true
+    allowed-origins: "http://127.0.0.1:5173,http://localhost:5173"
+    secure-refresh-cookie: false
+    rate-limit-attempts: 100
+    rate-limit-window: PT1M
+  email-verification:
+    code-secret: test-email-verification-secret-32-characters-minimum
+    ttl: PT10M1S
+    resend-cooldown: PT1M
+    max-attempts: 5
+    mail-from: no-reply@example.test

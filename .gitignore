@@ -1,0 +1,53 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+.secrets/
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# Runtime data
+data/
+*.sqlite
+*.sqlite3
+*.db
+workspace/
+*.log
+
+# Python
+__pycache__/
+.pytest_cache/
+.venv/
+*.py[cod]
+backend/.venv/
+backend/build/
+backend/dist/
+
+# Node and frontend
+node_modules/
+dist/
+frontend/node_modules/
+frontend/dist/
+
+# Electron packaging output
+frontend/release/
+frontend/release*/
+disttest/
+
+# Java and Maven
+business-backend/target/
+business-backend/.mvn/apache-maven-*/
+
+# Temporary files
+.tmp/
+temp/
+tmp/
+.DS_Store
+Thumbs.db
+
+# Runtime credentials
+**/refresh-token.bin

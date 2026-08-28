@@ -1,0 +1,41 @@
+server:
+  port: ${BUSINESS_BACKEND_PORT:8081}
+spring:
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS_ENABLE:true}
+  datasource:
+    url: ${BUSINESS_DATABASE_URL:jdbc:postgresql://localhost:5432/local_agent}
+    username: ${BUSINESS_DATABASE_USER:local_agent}
+    password: ${BUSINESS_DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+app:
+  auth:
+    issuer: ${JWT_ISSUER:http://127.0.0.1:8081}
+    audience: ${JWT_AUDIENCE:local-agent}
+    access-ttl: ${ACCESS_TOKEN_TTL:PT10M}
+    refresh-ttl: ${REFRESH_TOKEN_TTL:P30D}
+    key-id: ${JWT_KEY_ID:local-agent-1}
+    private-key-pem: ${JWT_PRIVATE_KEY_PEM:}
+    public-key-pem: ${JWT_PUBLIC_KEY_PEM:}
+    allow-ephemeral-key: false
+    allowed-origins: ${BUSINESS_ALLOWED_ORIGINS:http://127.0.0.1:5173,http://localhost:5173}
+    secure-refresh-cookie: ${SECURE_REFRESH_COOKIE:false}
+    rate-limit-attempts: ${AUTH_RATE_LIMIT_ATTEMPTS:10}
+    rate-limit-window: ${AUTH_RATE_LIMIT_WINDOW:PT1M}
+  email-verification:
+    code-secret: ${EMAIL_VERIFICATION_CODE_SECRET:}
+    ttl: ${EMAIL_VERIFICATION_TTL:PT10M}
+    resend-cooldown: ${EMAIL_VERIFICATION_RESEND_COOLDOWN:PT1M}
+    max-attempts: ${EMAIL_VERIFICATION_MAX_ATTEMPTS:5}
+    mail-from: ${MAIL_FROM:}

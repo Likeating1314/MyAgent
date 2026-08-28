@@ -1,0 +1,71 @@
+{
+  "name": "agent-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Windows desktop client for MyAgent.",
+  "author": {
+    "name": "MyAgent Project"
+  },
+  "copyright": "Copyright © 2026 MyAgent Project",
+  "type": "module",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "dev": "vite --configLoader native",
+    "build": "vue-tsc --noEmit && vite build --configLoader native",
+    "preview": "vite preview --configLoader native",
+    "test": "node --test test/requestLifecycle.test.ts test/clientStream.test.ts test/collaborationStream.test.ts test/collaborationSession.test.ts test/sessionLifecycle.test.ts test/settingsPersistence.test.ts test/authUi.test.ts test/authIsolation.test.ts test/registrationEmailCode.test.ts test/registrationEmailCodeState.test.ts test/electronRuntime.test.mjs test/releaseSmoke.test.mjs",
+    "desktop:dev": "concurrently \"npm run dev\" \"npm run electron:dev\"",
+    "electron:dev": "wait-on http://127.0.0.1:5173 && electron .",
+    "sidecar:build": "powershell -ExecutionPolicy Bypass -File ../backend/scripts/build_sidecar.ps1",
+    "icons:build": "powershell -ExecutionPolicy Bypass -File scripts/generate_icons.ps1",
+    "desktop:build": "powershell -ExecutionPolicy Bypass -File scripts/build_desktop.ps1",
+    "desktop:smoke": "powershell -ExecutionPolicy Bypass -File scripts/test_windows_release.ps1"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@types/node": "^24.3.1",
+    "concurrently": "^9.2.1",
+    "electron": "37.10.3",
+    "electron-builder": "26.15.3",
+    "wait-on": "^8.0.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vue-tsc": "^3.1.1"
+  },
+  "build": {
+    "appId": "com.local.agent",
+    "productName": "MyAgent",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "../.tmp/release-assets"
+    },
+    "extraResources": [
+      {
+        "from": "../.tmp/sidecar-dist/local-agent-backend",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "../.tmp/release-assets/app-icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

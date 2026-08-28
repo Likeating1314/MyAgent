@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+MAVEN_VERSION=3.9.9
+BASE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+MAVEN_DIR="$BASE_DIR/.mvn/apache-maven-$MAVEN_VERSION"
+
+if [ ! -x "$MAVEN_DIR/bin/mvn" ]; then
+  ARCHIVE="${TMPDIR:-/tmp}/apache-maven-$MAVEN_VERSION-bin.tar.gz"
+  DOWNLOAD_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz"
+  mkdir -p "$BASE_DIR/.mvn"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$DOWNLOAD_URL" -o "$ARCHIVE"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "$DOWNLOAD_URL" -O "$ARCHIVE"
+  else
+    echo "Maven wrapper requires curl or wget to download Maven $MAVEN_VERSION." >&2
+    exit 1
+  fi
+  tar -xzf "$ARCHIVE" -C "$BASE_DIR/.mvn"
+  rm -f "$ARCHIVE"
+fi
+
+exec "$MAVEN_DIR/bin/mvn" "$@"

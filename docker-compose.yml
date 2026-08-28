@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${BUSINESS_DATABASE_NAME:-local_agent}
+      POSTGRES_USER: ${BUSINESS_DATABASE_USER:-local_agent}
+      POSTGRES_PASSWORD: ${BUSINESS_DATABASE_PASSWORD}
+    volumes:
+      - business-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BUSINESS_DATABASE_USER:-local_agent} -d ${BUSINESS_DATABASE_NAME:-local_agent}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  business-backend:
+    image: maven:3.9.9-eclipse-temurin-21
+    working_dir: /app/business-backend
+    volumes:
+      - ./:/app
+      - ./.secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
+      - ./.secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
+    command: sh ./mvnw spring-boot:run
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports: ["127.0.0.1:8081:8081"]
+    environment:
+      BUSINESS_DATABASE_URL: jdbc:postgresql://postgres:5432/${BUSINESS_DATABASE_NAME:-local_agent}
+      BUSINESS_DATABASE_USER: ${BUSINESS_DATABASE_USER:-local_agent}
+      BUSINESS_DATABASE_PASSWORD: ${BUSINESS_DATABASE_PASSWORD}
+      JWT_PRIVATE_KEY_PEM: ${JWT_PRIVATE_KEY_PEM:-file:/run/secrets/jwt-private.pem}
+      JWT_PUBLIC_KEY_PEM: ${JWT_PUBLIC_KEY_PEM:-file:/run/secrets/jwt-public.pem}
+      JWT_ISSUER: ${JWT_ISSUER:-http://127.0.0.1:8081}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-local-agent}
+      BUSINESS_ALLOWED_ORIGINS: ${BUSINESS_ALLOWED_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173}
+      EMAIL_VERIFICATION_CODE_SECRET: ${EMAIL_VERIFICATION_CODE_SECRET:?EMAIL_VERIFICATION_CODE_SECRET is required}
+      EMAIL_VERIFICATION_TTL: ${EMAIL_VERIFICATION_TTL:-PT10M}
+      EMAIL_VERIFICATION_RESEND_COOLDOWN: ${EMAIL_VERIFICATION_RESEND_COOLDOWN:-PT1M}
+      EMAIL_VERIFICATION_MAX_ATTEMPTS: ${EMAIL_VERIFICATION_MAX_ATTEMPTS:-5}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_STARTTLS_ENABLE: ${MAIL_STARTTLS_ENABLE:-true}
+      MAIL_FROM: ${MAIL_FROM}
+
+  backend:
+    image: python:3.11-slim
+    working_dir: /app/backend
+    volumes:
+      - ./:/app
+    command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host ${BACKEND_HOST:-0.0.0.0} --port 8000"
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+    environment:
+      API_AUTH_TOKEN: ${API_AUTH_TOKEN:?API_AUTH_TOKEN is required}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
+      WORKSPACE_DIR: /app/workspace
+      SQLITE_PATH: /app/data/agent.sqlite3
+      ALLOW_COMMAND_EXECUTION: ${ALLOW_COMMAND_EXECUTION:-false}
+      MAX_AGENT_STEPS: ${MAX_AGENT_STEPS:-8}
+      SESSION_RUN_LEASE_SECONDS: ${SESSION_RUN_LEASE_SECONDS:-120}
+      MAX_CONTEXT_CHARS: ${MAX_CONTEXT_CHARS:-120000}
+      MAX_TOOL_RESULT_CHARS: ${MAX_TOOL_RESULT_CHARS:-20000}
+      MAX_COMMAND_OUTPUT_CHARS: ${MAX_COMMAND_OUTPUT_CHARS:-20000}
+      MAX_USER_MESSAGE_CHARS: ${MAX_USER_MESSAGE_CHARS:-20000}
+      MAX_MESSAGE_CHARS: ${MAX_MESSAGE_CHARS:-40000}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173,null}
+      APPROVAL_TTL_SECONDS: ${APPROVAL_TTL_SECONDS:-900}
+      ALLOW_NON_LOOPBACK_TOKEN_BOOTSTRAP: "true"
+      JWKS_URL: http://business-backend:8081/.well-known/jwks.json
+      JWT_ISSUER: ${JWT_ISSUER:-http://127.0.0.1:8081}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-local-agent}
+      JWKS_CACHE_SECONDS: ${JWKS_CACHE_SECONDS:-300}
+
+  frontend:
+    image: node:24-alpine
+    working_dir: /app/frontend
+    volumes:
+      - ./:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "127.0.0.1:5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://127.0.0.1:8000
+      VITE_BUSINESS_API_BASE_URL: http://127.0.0.1:8081
+
+volumes:
+  business-postgres:
